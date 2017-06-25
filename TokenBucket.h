@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016 Erik Rigtorp <erik@rigtorp.se>
+Copyright (c) 2017 Erik Rigtorp <erik@rigtorp.se>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,9 @@ SOFTWARE.
 
 class TokenBucket {
 public:
-  TokenBucket() : time_(0), timePerToken_(0), timePerBurst_(0) {}
+  TokenBucket() {}
 
   TokenBucket(const uint64_t rate, const uint64_t burstSize) {
-    time_ = 0;
     timePerToken_ = 1000000 / rate;
     timePerBurst_ = burstSize * timePerToken_;
   }
@@ -79,7 +78,7 @@ public:
   }
 
 private:
-  std::atomic<uint64_t> time_;
-  std::atomic<uint64_t> timePerToken_;
-  std::atomic<uint64_t> timePerBurst_;
+  std::atomic<uint64_t> time_ = {0};
+  std::atomic<uint64_t> timePerToken_ = {0};
+  std::atomic<uint64_t> timePerBurst_ = {0};
 };
