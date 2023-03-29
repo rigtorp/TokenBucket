@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <atomic>
 #include <chrono>
+#include <limits>
 
 class TokenBucket {
 public:
@@ -46,16 +47,16 @@ public:
   }
 
   bool consume(const uint64_t tokens) {
-    const uint64_t now =
+    const int64_t now =
         std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::steady_clock::now().time_since_epoch())
             .count();
-    const uint64_t timeNeeded =
+    const int64_t timeNeeded =
         tokens * timePerToken_.load(std::memory_order_relaxed);
-    const uint64_t minTime =
+    const int64_t minTime =
         now - timePerBurst_.load(std::memory_order_relaxed);
-    uint64_t oldTime = time_.load(std::memory_order_relaxed);
-    uint64_t newTime = oldTime;
+    int64_t oldTime = time_.load(std::memory_order_relaxed);
+    int64_t newTime = oldTime;
 
     if (minTime > oldTime) {
       newTime = minTime;
@@ -78,7 +79,7 @@ public:
   }
 
 private:
-  std::atomic<uint64_t> time_ = {0};
+  std::atomic<int64_t> time_ = {std::numeric_limits<int64_t>::min()};
   std::atomic<uint64_t> timePerToken_ = {0};
   std::atomic<uint64_t> timePerBurst_ = {0};
 };
