@@ -33,13 +33,12 @@ public:
         return false;
       }
       if (time_.compare_exchange_weak(oldTime, newTime,
-                                      std::memory_order_relaxed,
-                                      std::memory_order_relaxed)) {
+                                     std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
         return true;
       }
     }
 
-    return false;
   }
 
 private:
