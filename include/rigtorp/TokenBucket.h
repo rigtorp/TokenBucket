@@ -5,6 +5,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
+
+namespace rigtorp {
 
 template <typename Clock = std::chrono::steady_clock> class TokenBucket {
 public:
@@ -44,3 +47,5 @@ private:
   std::chrono::nanoseconds timePerToken_;
   std::chrono::nanoseconds timePerBurst_;
 };
+
+} // namespace rigtorp

@@ -1,0 +1,66 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.platform.name }} / ${{ matrix.config }} / C++${{ matrix.standard }}
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - {name: Linux GCC, os: ubuntu-latest, compiler: g++}
+          - {name: Linux Clang, os: ubuntu-latest, compiler: clang++}
+          - {name: macOS Clang, os: macos-latest, compiler: clang++}
+          - {name: Windows MSVC, os: windows-latest, compiler: cl}
+        config: [Debug, Release]
+        standard: [11, 17]
+    env:
+      CXX: ${{ matrix.platform.compiler }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+          -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
+          -DTOKENBUCKET_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config }} --parallel 2
+      - name: Test
+        run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure --no-tests=error
+      - name: Check CMake consumers and relocation
+        run: python tests/check_cmake.py --config ${{ matrix.config }} --standard ${{ matrix.standard }}
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: >-
+          cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=11
+          -DTOKENBUCKET_WARNINGS_AS_ERRORS=ON
+          "-DCMAKE_CXX_FLAGS=-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer"
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error
