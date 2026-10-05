@@ -5,6 +5,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
+
+namespace rigtorp {
 
 template <typename Clock = std::chrono::steady_clock> class TokenBucket {
 public:
@@ -30,13 +33,12 @@ public:
         return false;
       }
       if (time_.compare_exchange_weak(oldTime, newTime,
-                                      std::memory_order_relaxed,
-                                      std::memory_order_relaxed)) {
+                                     std::memory_order_relaxed,
+                                     std::memory_order_relaxed)) {
         return true;
       }
     }
 
-    return false;
   }
 
 private:
@@ -44,3 +46,5 @@ private:
   std::chrono::nanoseconds timePerToken_;
   std::chrono::nanoseconds timePerBurst_;
 };
+
+} // namespace rigtorp
